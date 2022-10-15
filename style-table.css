@@ -1,0 +1,91 @@
+/*
+ * H: 197
+ * S:  18
+ * V: 20, 90
+ *
+ * H: 197
+ * S:  80
+ * V: 80 #299ecc
+ */
+
+html {
+	background-color: #000000;
+	color: #bcdae6;
+	font-family: Sans-serif;
+}
+
+input[type='text'], textarea {
+	background-color: #2a3033;
+	border-color: #bcdae6;
+	color: #bcdae6;
+}
+
+button, select {
+	display: block;
+	background-color: #2a3033;
+	border-color: #bcdae6;
+	color: #bcdae6;
+	border-radius: 4px;
+}
+
+.login {
+	/* display: none; */
+}
+
+div.control {
+	/* display: none; */
+	background-color: #2a3033;
+}
+
+div.header {
+	position: relative;
+	width
+}
+
+.channels td {
+	width 85px;
+	text-align: center;
+}
+
+button.mute-off {
+	width: 82px;
+}
+button.mute-on {
+	display:inline-block;
+	width: 82px;
+	border-color: red;
+	color: red;
+}
+
+button.send-off {
+	border-color: grey;
+	color: grey;
+	width: 82px;
+}
+button.send-on {
+	width: 82px;
+}
+
+.fader {
+	writing-mode: bt-lr;
+	-webkit-appearance: slider-vertical;
+	border: 2px;
+	width: 25px;
+	height: 200px;
+	outline: none;
+	transition: opacity .2s;
+	background-color: #000;
+}
+.fader::-moz-range-thumb {
+	width: 50px;
+	height: 50px; 
+	background: transparent;
+	border: 5px solid #299ecc;
+}
+.fader::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	width: 50px;
+	height: 50px; 
+	background: transparent;
+	border: 5px solid #299ecc;
+}
