@@ -1,4 +1,9 @@
 
+var ro_channels = [
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
+
 function get_appropriate_ws_url(extra_url) {
 	var pcol;
 	var u = document.URL;
@@ -29,31 +34,67 @@ function new_ws(urlpath, protocol)
 	return new WebSocket(urlpath, protocol);
 }
 
-var ws;
+var ws = null;
 var sel_bus = "-1";
+var rq_queue = [];
+
+function rq_queue_push(cmd)
+{
+	rq_queue.push(cmd);
+}
+
+function rq_queue_send()
+{
+	while (rq_queue.length > 0) {
+		var e = rq_queue.shift();
+		var cmd = e[0];
+		var cb = e[1];
+		var data = e[2];
+		if (!cb(data))
+			continue;
+		console.log("sending " + cmd);
+		ws.send(cmd);
+		// setTimeout(rq_queue_send, 1000);
+		break;
+	}
+}
+
+function test_bus(bus)
+{
+	if (bus == sel_bus)
+		return true;
+	return false;
+}
+
+function request_channels()
+{
+	for (var ch = 0; ch < 32; ch++) {
+		rq_queue_push(["RQ1 " + (0x04000014 + ch * 0x10000).toString(16) + " 1", (x) => { return true; }, 0]);
+	}
+	rq_queue_send();
+}
 
 function request_current_bus()
 {
 	if (sel_bus < 0) {
-		for (var ch = 0; ch < 31; ch++) {
-			if (ch > 1) continue; // TODO: for debuggin
-			ws.send("RQ1 " + (0x04000014 + ch * 0x10000).toString(16) + " 1");
-			ws.send("RQ1 " + (0x04000016 + ch * 0x10000).toString(16) + " 2");
-		}
+		for (var ch = 0; ch < 32; ch++)
+			rq_queue_push(["RQ1 " + (0x04000016 + ch * 0x10000).toString(16) + " 2", test_bus, sel_bus]);
 	}
 	else if (0 <= sel_bus && sel_bus < 8) {
 		var addr_base = 0x04001200 + sel_bus * 8;
-		for (var ch = 0; ch < 31; ch++) {
-			if (ch > 1) continue; // TODO: for debuggin
-			ws.send("RQ1 " + (addr_base + ch * 0x10000 + 0x00).toString(16) + " 1"); // Aux send switch
-			ws.send("RQ1 " + (addr_base + ch * 0x10000 + 0x02).toString(16) + " 2"); // Aux level
-		}
+		for (var ch = 0; ch < 32; ch++)
+			rq_queue_push(["RQ1 " + (addr_base + ch * 0x10000 + 0x02).toString(16) + " 2", test_bus, sel_bus]); // Aux level
+		for (var ch = 0; ch < 32; ch++)
+			rq_queue_push(["RQ1 " + (addr_base + ch * 0x10000 + 0x00).toString(16) + " 1", test_bus, sel_bus]); // Aux send switch
 	}
+	rq_queue_send();
 }
 
 function on_bus_change(val)
 {
 	console.log("on_bus_change " + val);
+	if (!ws)
+		return;
 	sel_bus = val;
 	request_current_bus();
 }
@@ -76,7 +117,7 @@ function sw_ch_mute(ch) {
 	else
 		cache_ch_mute[ch] = 0x01;
 	senddt1(0x04000014 + ch * 0x10000, [cache_ch_mute[ch]]);
-	e = document.getElementById("mute_" + (ch+1));
+	e = document.getElementById("mute_" + ch);
 	if (e && cache_ch_mute[ch]) {
 		e.classList.remove("mute-off");
 		e.classList.add("mute-on");
@@ -87,9 +128,9 @@ function sw_ch_mute(ch) {
 }
 
 function got_ch_mute(ch, val) {
-	console.log("sw_ch_mute " + ch + " " + val);
+	console.log("got_ch_mute " + ch + " " + val);
 	cache_ch_mute[ch] = !!val;
-	e = document.getElementById("mute_" + (ch+1));
+	e = document.getElementById("mute_" + ch);
 	if (e && cache_ch_mute[ch]) {
 		e.classList.remove("mute-off");
 		e.classList.add("mute-on");
@@ -126,7 +167,7 @@ function on_ch_fader_set_label(ch, v0, v1) {
 	else
 		x = v0 * 128 + v1;
 
-	e = document.getElementById("fadervalue_" + (ch+1));
+	e = document.getElementById("fadervalue_" + ch);
 	if (x < -905)
 		e.innerHTML = "-Inf";
 	else
@@ -148,7 +189,7 @@ function got_ch_fader(bus, ch, v0, v1) {
 	console.log("got_ch_fader bus=" + bus + " ch=" + ch + " " + v0 + " " + v1);
 	if (bus != sel_bus)
 		return;
-	e = document.getElementById("fader_" + (ch+1));
+	e = document.getElementById("fader_" + ch);
 	if (e) {
 		e.value = midi2fader(v0, v1);
 	}
@@ -160,10 +201,12 @@ document.addEventListener("DOMContentLoaded", function() {
 	ws = new_ws(get_appropriate_ws_url(""), "ws");
 	try {
 		ws.onopen = function() {
+			request_channels();
 			request_current_bus();
+			setInterval(rq_queue_send, 1000);
 		};
-	
-		ws.onmessage =function got_packet(msg) {
+
+		ws.onmessage = function got_packet(msg) {
 			console.log("got_packet data='" + msg.data + "'");
 			var words = msg.data.split(' ');
 			if (words[0] == "DT1") {
@@ -171,40 +214,108 @@ document.addEventListener("DOMContentLoaded", function() {
 				var data0 = parseInt(words[2], 16);
 				var data1 = words.length > 3 ? parseInt(words[3], 16) : 0;
 				console.log("got_packet DT1 addr=0x" + addr.toString(16));
-				switch(addr) {
-					case 0x04000014: got_ch_mute(0, data0); break;
-					case 0x04010014: got_ch_mute(1, data0); break;
-					case 0x04000016: got_ch_fader(-1, 0, data0, data1); break;
-					case 0x04001202: got_ch_fader(0, 0, data0, data1); break;
-					case 0x0400120a: got_ch_fader(1, 0, data0, data1); break;
-					case 0x04001212: got_ch_fader(2, 0, data0, data1); break;
-					case 0x0400121a: got_ch_fader(3, 0, data0, data1); break;
+				var ch = (addr >> 16) & 0x7F;
+				var chaux = (addr >> 3) & 0x0F;
+				switch (addr & 0xFFE0FFFF) {
+					case 0x04000014: got_ch_mute(ch, data0); break;
+					case 0x04000016: got_ch_fader(-1, ch, data0, data1); break;
+				}
+				switch(addr & 0xFF00FF07) {
+					case 0x04001202: got_ch_fader(chaux, ch, data0, data1); break;
 				}
 			}
+			rq_queue_send();
 		};
 	
 		ws.onclose = function(){
-			// document.getElementById("b").disabled = 1;
-			// document.getElementById("m").disabled = 1;
+			document.getElementById("message").textContent = 'Disconnected. Please reload';
 		};
 	} catch(exception) {
 		alert("<p>Error " + exception);  
 	}
 	
-	function sendmsg()
-	{
-		// ws.send(document.getElementById("m").value);
-		// document.getElementById("m").value = "";
+	var tbody = document.getElementById("channel-holder");
+
+	// mute button
+	var tr = document.createElement("tr");
+	for (var ch = 0; ch < 32; ch++) {
+		var td = document.createElement("td");
+		td.className = "mute-holder";
+		var button = document.createElement("button");
+		button.className = "mute-off";
+		button.id = "mute_" + ch;
+		button.textContent = "Mute";
+		if (ro_channels[ch])
+			button.setAttribute("disabled", true);
+		td.appendChild(button);
+		tr.appendChild(td);
+		var func = (function(ch) { return function() { sw_ch_mute(ch); } })(ch);
+		button.addEventListener("click", func);
 	}
+	tbody.appendChild(tr);
+
+	// TODO: send button
+
+	// fader
+	var tr = document.createElement("tr");
+	for (var ch = 0; ch < 32; ch++) {
+		var td = document.createElement("td");
+		td.className = "fader-holder";
+		var fader = document.createElement("input");
+		fader.className = "fader";
+		fader.id = "fader_" + ch;
+		fader.type = "range";
+		fader.min = 0;
+		fader.max = 1000;
+		fader.value = 0;
+		if (ro_channels[ch])
+			fader.setAttribute("disabled", true);
+		fader.setAttribute("orient", "vertical");
+		var fadervalue = document.createElement("span");
+		fadervalue.id = "fadervalue_" + ch;
+		fadervalue.className = "fadervalue";
+		fadervalue.textContent = "x dB";
+		td.appendChild(fader);
+		td.appendChild(document.createElement("br"));
+		td.appendChild(fadervalue);
+		tr.appendChild(td);
+
+		var func = (function(ch) { return function(ev) { on_ch_fader(ch, ev.target.value); } })(ch);
+		fader.addEventListener("input", func);
+
+	}
+	tbody.appendChild(tr);
+
+	// channel number
+	var tr = document.createElement("tr");
+	for (var ch = 0; ch < 32; ch++) {
+		var td = document.createElement("td");
+		td.className = "namecode-holder";
+		var text = document.createElement("span");
+		text.className = "namecode";
+		text.id = "namecode_" + ch;
+		text.textContent = "CH" + (ch+1);
+		td.appendChild(text);
+		tr.appendChild(td);
+	}
+	tbody.appendChild(tr);
+
+	// channel name
+	var tr = document.createElement("tr");
+	for (var ch = 0; ch < 32; ch++) {
+		var td = document.createElement("td");
+		td.className = "name-holder";
+		var text = document.createElement("span");
+		text.className = "name";
+		text.id = "name_" + ch;
+		text.textContent = "CH" + (ch+1);
+		td.appendChild(text);
+		tr.appendChild(td);
+	}
+	tbody.appendChild(tr);
 
 	document.getElementById("bus").addEventListener("change", (e) => { on_bus_change(e.target.value); });
 	on_bus_change(document.getElementById("bus").value);
-
-	document.getElementById("mute_1").addEventListener("click", () => { sw_ch_mute(0); });
-	document.getElementById("mute_2").addEventListener("click", () => { sw_ch_mute(1); });
-
-	document.getElementById("fader_1").addEventListener("input", (e) => { on_ch_fader(0, e.target.value); });
-	document.getElementById("fader_2").addEventListener("input", (e) => { on_ch_fader(1, e.target.value); });
 
 }, false);
 

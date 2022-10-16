@@ -8,6 +8,7 @@
 	<body>
 		<div class='control'>
 			<div class='header'>
+				<span id='message' />
 				<select class='bus' name='bus' id='bus'>
 					<!--
 					<option value='-1'>Main</option>
@@ -29,52 +30,30 @@
 				</select>
 			</div>
 
-			<table class='channels'>
-				<tr>
-					<td class='mute-holder'>
-						<button id='mute_1' class='mute-off'>Mute</button>
-					</td>
-					<td class='mute-holder'>
-						<button id='mute_2' class='mute-off'>Mute</button>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<button id='sendenable_1' class='send-on'>To Main</button>
-					</td>
-					<td>
-						<button id='sendenable_2' class='send-off'>To Main</button>
-					</td>
-				</tr>
-				<tr class="faders">
-					<td>
-						<input id='fader_1' type='range' min='0' max='1000' value='0' class='fader' orient='vertical'/>
-						<br/>
-						<span id='fadervalue_1'>-INF</span>
-					</td>
-					<td>
-						<input id='fader_2' type='range' min='0' max='1000' value='0' class='fader' orient='vertical'/>
-						<br/>
-						<span id='fadervalue_2'>0 dB</span>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<span id='namecode_1' class='name-code'>CH1</span></br>
-					</td>
-					<td>
-						<span id='namecode_2' class='name-code'>CH2</span></br>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<span id='name_1' class='name-invalid'>CH1</span>
-					</td>
-					<td>
-						<span id='name_2' class='name-invalid'>CH2</span>
-					</td>
-				</tr>
-			</table>
+			<div class='channels-holder'>
+				<table class='channels'>
+					<tbody id='channel-holder'>
+					</tbody>
+					<!--
+					<tr>
+						<td>
+							<button id='sendenable_1' class='send-on'>To Main</button>
+						</td>
+						<td>
+							<button id='sendenable_2' class='send-off'>To Main</button>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<span id='name_1' class='name-invalid'>CH1</span>
+						</td>
+						<td>
+							<span id='name_2' class='name-invalid'>CH2</span>
+						</td>
+					</tr>
+					-->
+				</table>
+			</div>
 		</div>
 	</body>
 </html>

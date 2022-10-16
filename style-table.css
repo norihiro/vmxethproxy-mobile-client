@@ -39,7 +39,11 @@ div.control {
 
 div.header {
 	position: relative;
-	width
+}
+
+.channels-holder {
+	overflow-x: scroll;
+	background-color: #2a3033;
 }
 
 .channels td {
@@ -88,4 +92,8 @@ button.send-on {
 	height: 50px; 
 	background: transparent;
 	border: 5px solid #299ecc;
+}
+.fadervalue {
+	white-space: nowrap;
+	overflow-x: hidden;
 }
