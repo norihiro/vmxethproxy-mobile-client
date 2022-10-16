@@ -97,3 +97,12 @@ button.send-on {
 	white-space: nowrap;
 	overflow-x: hidden;
 }
+
+.color-0 { background: #000080; color: white; }
+.color-1 { background: #0000FF; color: white; }
+.color-2 { background: #964B00; color: white; }
+.color-3 { background: #FF0000; color: white; }
+.color-4 { background: #FFFF00; color: black; }
+.color-5 { background: #008000; color: white; }
+.color-6 { background: #00FFFF; color: black; }
+.color-7 { background: #700070; color: white; }

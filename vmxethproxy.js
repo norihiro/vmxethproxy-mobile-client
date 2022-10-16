@@ -74,6 +74,14 @@ function request_channels()
 	rq_queue_send();
 }
 
+function request_channels1()
+{
+	for (var ch = 0; ch < 32; ch++) {
+		rq_queue_push(["RQ1 " + (0x04000000 + ch * 0x10000).toString(16) + " 6", (x) => { return true; }, 0]);
+		rq_queue_push(["RQ1 " + (0x0400000E + ch * 0x10000).toString(16) + " 1", (x) => { return true; }, 0]);
+	}
+}
+
 function request_current_bus()
 {
 	if (sel_bus < 0) {
@@ -196,6 +204,26 @@ function got_ch_fader(bus, ch, v0, v1) {
 	on_ch_fader_set_label(ch, v0, v1);
 }
 
+function got_ch_name(ch, name) {
+	console.log("got_ch_name " + ch + " '" + name + "'");
+	e = document.getElementById("name_" + ch);
+	if (e) {
+		e.textContent = name;
+	}
+}
+
+function got_ch_color(ch, color) {
+	console.log("got_ch_color " + ch + " " + color);
+	e = document.getElementById("name_" + ch);
+	if (e) {
+		for (var i = 0; i < 8; i++) {
+			if (i != color)
+				e.classList.remove("color-" + i);
+		}
+		e.classList.add("color-" + color);
+	}
+}
+
 document.addEventListener("DOMContentLoaded", function() {
 
 	ws = new_ws(get_appropriate_ws_url(""), "ws");
@@ -203,6 +231,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		ws.onopen = function() {
 			request_channels();
 			request_current_bus();
+			request_channels1();
 			setInterval(rq_queue_send, 1000);
 		};
 
@@ -217,6 +246,8 @@ document.addEventListener("DOMContentLoaded", function() {
 				var ch = (addr >> 16) & 0x7F;
 				var chaux = (addr >> 3) & 0x0F;
 				switch (addr & 0xFFE0FFFF) {
+					case 0x04000000: got_ch_name(ch, String.fromCharCode(data0, data1, parseInt(words[4], 16), parseInt(words[5], 16), parseInt(words[6], 16), parseInt(words[7], 16))); break;
+					case 0x0400000E: got_ch_color(ch, data0); break;
 					case 0x04000014: got_ch_mute(ch, data0); break;
 					case 0x04000016: got_ch_fader(-1, ch, data0, data1); break;
 				}
