@@ -198,6 +198,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	}
 
 	document.getElementById("bus").addEventListener("change", (e) => { on_bus_change(e.target.value); });
+	on_bus_change(document.getElementById("bus").value);
 
 	document.getElementById("mute_1").addEventListener("click", () => { sw_ch_mute(0); });
 	document.getElementById("mute_2").addEventListener("click", () => { sw_ch_mute(1); });
