@@ -47,16 +47,16 @@ div.header {
 }
 
 .channels td {
-	width 85px;
+	width 80px;
 	text-align: center;
 }
 
 button.mute-off {
-	width: 82px;
+	width: 70px;
 }
 button.mute-on {
 	display:inline-block;
-	width: 82px;
+	width: 70px;
 	border-color: red;
 	color: red;
 }
@@ -64,10 +64,10 @@ button.mute-on {
 button.send-off {
 	border-color: grey;
 	color: grey;
-	width: 82px;
+	width: 70px;
 }
 button.send-on {
-	width: 82px;
+	width: 70px;
 }
 
 .fader {
