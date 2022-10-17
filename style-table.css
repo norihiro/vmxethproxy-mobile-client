@@ -101,6 +101,7 @@ button.send-on {
 	overflow-x: hidden;
 }
 
+span.name { width: 75px; display: block; }
 .color-0 { background: #000080; color: white; }
 .color-1 { background: #0000FF; color: white; }
 .color-2 { background: #964B00; color: white; }
