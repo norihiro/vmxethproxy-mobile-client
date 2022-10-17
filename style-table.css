@@ -47,8 +47,11 @@ div.header {
 }
 
 .channels td {
-	width 80px;
 	text-align: center;
+}
+
+.channels td.link-odd {
+	display: none;
 }
 
 button.mute-off {

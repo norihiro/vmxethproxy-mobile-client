@@ -68,6 +68,10 @@ function test_bus(bus)
 
 function request_channels()
 {
+	for (var ch = 0; ch < 32; ch += 2) {
+		rq_queue_push(["RQ1 " + (0x04000010 + ch * 0x10000).toString(16) + " 1", (x) => { return true; }, 0]);
+	}
+
 	for (var ch = 0; ch < 32; ch++) {
 		rq_queue_push(["RQ1 " + (0x04000014 + ch * 0x10000).toString(16) + " 1", (x) => { return true; }, 0]);
 	}
@@ -116,7 +120,37 @@ function senddt1(addr, data)
 	ws.send(msg);
 }
 
+var is_linked = new Array(32);
 var cache_ch_mute = new Array(32);
+
+function got_ch_link_int(ch, val)
+{
+	is_linked[ch] = val;
+
+	var ee = document.getElementsByClassName("td-ch_" + ch);
+	console.log("got_ch_link_int ee.length=" + ee.length);
+	for (var i = 0; i < ee.length; i++) {
+		if (val) {
+			ee[i].classList.remove("link-mono");
+			ee[i].classList.add((ch & 1) ? "link-odd" : "link-even");
+		} else {
+			ee[i].classList.remove((ch & 1) ? "link-odd" : "link-even");
+			ee[i].classList.add("link-mono");
+		}
+	}
+
+	var e = document.getElementById("namecode_" + ch);
+	e.textContent = (val && (ch & 1) == 0) ? "CH" + (ch+1) + "/" + (ch+2) : "CH" + (ch+1);
+}
+
+function got_ch_link(ch, val)
+{
+	console.log("got_ch_link " + ch + " " + val);
+	if (val != is_linked[ch])
+		got_ch_link_int(ch, val);
+	if (val != is_linked[ch ^ 1])
+		got_ch_link_int(ch ^ 1, val);
+}
 
 function sw_ch_mute(ch) {
 	console.log("sw_ch_mute " + ch);
@@ -248,6 +282,7 @@ document.addEventListener("DOMContentLoaded", function() {
 				switch (addr & 0xFFE0FFFF) {
 					case 0x04000000: got_ch_name(ch, String.fromCharCode(data0, data1, parseInt(words[4], 16), parseInt(words[5], 16), parseInt(words[6], 16), parseInt(words[7], 16))); break;
 					case 0x0400000E: got_ch_color(ch, data0); break;
+					case 0x04000010: got_ch_link(ch, data0); break;
 					case 0x04000014: got_ch_mute(ch, data0); break;
 					case 0x04000016: got_ch_fader(-1, ch, data0, data1); break;
 				}
@@ -271,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	var tr = document.createElement("tr");
 	for (var ch = 0; ch < 32; ch++) {
 		var td = document.createElement("td");
-		td.className = "mute-holder";
+		td.className = "mute-holder td-ch_" + ch;
 		var button = document.createElement("button");
 		button.className = "mute-off";
 		button.id = "mute_" + ch;
@@ -291,7 +326,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	var tr = document.createElement("tr");
 	for (var ch = 0; ch < 32; ch++) {
 		var td = document.createElement("td");
-		td.className = "fader-holder";
+		td.className = "fader-holder td-ch_" + ch;
 		var fader = document.createElement("input");
 		fader.className = "fader";
 		fader.id = "fader_" + ch;
@@ -321,7 +356,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	var tr = document.createElement("tr");
 	for (var ch = 0; ch < 32; ch++) {
 		var td = document.createElement("td");
-		td.className = "namecode-holder";
+		td.className = "namecode-holder td-ch_" + ch;
 		var text = document.createElement("span");
 		text.className = "namecode";
 		text.id = "namecode_" + ch;
@@ -335,7 +370,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	var tr = document.createElement("tr");
 	for (var ch = 0; ch < 32; ch++) {
 		var td = document.createElement("td");
-		td.className = "name-holder";
+		td.className = "name-holder td-ch_" + ch;
 		var text = document.createElement("span");
 		text.className = "name";
 		text.id = "name_" + ch;
