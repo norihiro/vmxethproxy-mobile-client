@@ -114,9 +114,8 @@ function on_bus_change(val)
 {
 	console.log("on_bus_change " + val);
 	sel_bus = parseInt(val);
-	if (!ws_connected)
-		return;
-	request_current_bus();
+	if (ws_connected)
+		request_current_bus();
 
 	for (var ch = 0; ch < 32; ch++)
 		update_ch_send(ch, cache_ch_aux_send_get(sel_bus, ch));
