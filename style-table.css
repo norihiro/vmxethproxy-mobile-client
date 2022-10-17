@@ -58,7 +58,6 @@ button.mute-off {
 	width: 70px;
 }
 button.mute-on {
-	display:inline-block;
 	width: 70px;
 	border-color: red;
 	color: red;

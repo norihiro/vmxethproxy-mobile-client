@@ -40,7 +40,8 @@ function new_ws(urlpath, protocol)
 }
 
 var ws = null;
-var sel_bus = "-1";
+var ws_connected = false;
+var sel_bus = -2;
 var rq_queue = [];
 
 function rq_queue_push(cmd)
@@ -50,6 +51,8 @@ function rq_queue_push(cmd)
 
 function rq_queue_send()
 {
+	if (!ws_connected)
+		return;
 	while (rq_queue.length > 0) {
 		var e = rq_queue.shift();
 		var cmd = e[0];
@@ -110,9 +113,9 @@ function request_current_bus()
 function on_bus_change(val)
 {
 	console.log("on_bus_change " + val);
-	if (!ws)
+	sel_bus = parseInt(val);
+	if (!ws_connected)
 		return;
-	sel_bus = val;
 	request_current_bus();
 }
 
@@ -268,6 +271,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	ws = new_ws(get_appropriate_ws_url(""), "ws");
 	try {
 		ws.onopen = function() {
+			ws_connected = true;
 			request_channels();
 			request_current_bus();
 			request_channels1();
@@ -299,6 +303,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		};
 	
 		ws.onclose = function(){
+			ws_connected = false;
 			document.getElementById("message").textContent = 'Disconnected. Please reload';
 		};
 	} catch(exception) {
