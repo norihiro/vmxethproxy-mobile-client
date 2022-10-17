@@ -4,6 +4,11 @@ var ro_channels = [
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
 
+var ro_mute_channels = [
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
+
 function get_appropriate_ws_url(extra_url) {
 	var pcol;
 	var u = document.URL;
@@ -311,7 +316,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		button.className = "mute-off";
 		button.id = "mute_" + ch;
 		button.textContent = "Mute";
-		if (ro_channels[ch])
+		if (ro_channels[ch] || ro_mute_channels[ch])
 			button.setAttribute("disabled", true);
 		td.appendChild(button);
 		tr.appendChild(td);
