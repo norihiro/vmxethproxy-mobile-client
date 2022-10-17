@@ -178,6 +178,23 @@ function got_ch_link(ch, val)
 		got_ch_link_int(ch ^ 1, val);
 }
 
+function update_ch_mute(ch, val)
+{
+	e = document.getElementById("mute_" + ch);
+	if (e && val) {
+		e.classList.remove("mute-off");
+		e.classList.add("mute-on");
+	} else if (e) {
+		e.classList.remove("mute-on");
+		e.classList.add("mute-off");
+	}
+	var fader = document.getElementById("fader_" + ch);
+	if (fader && val)
+		fader.classList.add("mute-on");
+	else if (fader)
+		fader.classList.remove("mute-on");
+}
+
 function sw_ch_mute(ch) {
 	console.log("sw_ch_mute " + ch);
 	if (cache_ch_mute[ch])
@@ -185,27 +202,13 @@ function sw_ch_mute(ch) {
 	else
 		cache_ch_mute[ch] = 0x01;
 	senddt1(0x04000014 + ch * 0x10000, [cache_ch_mute[ch]]);
-	e = document.getElementById("mute_" + ch);
-	if (e && cache_ch_mute[ch]) {
-		e.classList.remove("mute-off");
-		e.classList.add("mute-on");
-	} else if (e) {
-		e.classList.remove("mute-on");
-		e.classList.add("mute-off");
-	}
+	update_ch_mute(ch, cache_ch_mute[ch]);
 }
 
 function got_ch_mute(ch, val) {
 	console.log("got_ch_mute " + ch + " " + val);
 	cache_ch_mute[ch] = !!val;
-	e = document.getElementById("mute_" + ch);
-	if (e && cache_ch_mute[ch]) {
-		e.classList.remove("mute-off");
-		e.classList.add("mute-on");
-	} else if (e) {
-		e.classList.remove("mute-on");
-		e.classList.add("mute-off");
-	}
+	update_ch_mute(ch, cache_ch_mute[ch]);
 }
 
 function update_ch_send(ch, val)
@@ -217,14 +220,12 @@ function update_ch_send(ch, val)
 		button.classList.remove("send-off");
 		button.classList.add("send-on");
 		button.textContent = "On";
-		fader.classList.remove("fader-off");
-		fader.classList.add("fader-on");
+		fader.classList.remove("send-off");
 	} else if (button) {
 		button.classList.remove("send-on");
 		button.classList.add("send-off");
 		button.textContent = "Off";
-		fader.classList.remove("fader-on");
-		fader.classList.add("fader-off");
+		fader.classList.add("send-off");
 	}
 }
 
@@ -418,7 +419,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		var td = document.createElement("td");
 		td.className = "fader-holder td-ch_" + ch;
 		var fader = document.createElement("input");
-		fader.className = "fader fader-on";
+		fader.className = "fader";
 		fader.id = "fader_" + ch;
 		fader.type = "range";
 		fader.min = 0;

@@ -86,24 +86,32 @@ button.send-on {
 	width: 50px;
 	height: 50px; 
 	background: transparent;
-}
-.fader-on::-moz-range-thumb {
 	border: 5px solid #299ecc;
 }
-.fader-off::-moz-range-thumb {
+.fader.send-off::-moz-range-thumb {
 	border: 5px solid #505050;
+}
+.fader.mute-on::-moz-range-thumb {
+	border: 5px solid #ff0000;
+}
+.fader.mute-on.send-off::-moz-range-thumb {
+	border: 5px solid #a72828;
 }
 .fader::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 50px;
 	height: 50px; 
 	background: transparent;
-}
-.fader-on::-webkit-slider-thumb {
 	border: 5px solid #299ecc;
 }
-.fader-off::-webkit-slider-thumb {
+.fader.send-off::-webkit-slider-thumb {
 	border: 5px solid #505050;
+}
+.fader.mute-on::-webkit-slider-thumb {
+	border: 5px solid #ff0000;
+}
+.fader.mute-on.send-off::-webkit-slider-thumb {
+	border: 5px solid #a72828;
 }
 .fadervalue {
 	white-space: nowrap;
