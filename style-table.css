@@ -86,20 +86,31 @@ button.send-on {
 	width: 50px;
 	height: 50px; 
 	background: transparent;
+}
+.fader-on::-moz-range-thumb {
 	border: 5px solid #299ecc;
+}
+.fader-off::-moz-range-thumb {
+	border: 5px solid #505050;
 }
 .fader::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 50px;
 	height: 50px; 
 	background: transparent;
+}
+.fader-on::-webkit-slider-thumb {
 	border: 5px solid #299ecc;
+}
+.fader-off::-webkit-slider-thumb {
+	border: 5px solid #505050;
 }
 .fadervalue {
 	white-space: nowrap;
 	overflow-x: hidden;
 }
 
+span.namecode { font-size: small; }
 span.name { width: 75px; display: block; }
 .color-0 { background: #000080; color: white; }
 .color-1 { background: #0000FF; color: white; }

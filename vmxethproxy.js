@@ -117,6 +117,9 @@ function on_bus_change(val)
 	if (!ws_connected)
 		return;
 	request_current_bus();
+
+	for (var ch = 0; ch < 32; ch++)
+		update_ch_send(ch, cache_ch_aux_send_get(sel_bus, ch));
 }
 
 function senddt1(addr, data)
@@ -130,6 +133,21 @@ function senddt1(addr, data)
 
 var is_linked = new Array(32);
 var cache_ch_mute = new Array(32);
+var cache_ch_aux_send = new Array(13 * 32);
+
+function cache_ch_aux_send_set(aux, ch, val) {
+	if (-1 <= aux && aux < 12 && 0 <= ch && ch < 32)
+		return cache_ch_aux_send[(aux+1) * 32 + ch] = !!val;
+	return true;
+}
+function cache_ch_aux_send_get(aux, ch) {
+	if (-1 <= aux && aux < 12 && 0 <= ch && ch < 32)
+		return cache_ch_aux_send[(aux+1) * 32 + ch];
+	console.log("Error: cache_ch_aux_send_get aux=" + aux + " ch=" + ch);
+	return true;
+}
+
+for (var a = -1; a < 12; a++) for (var c = 0; c < 32; c++) cache_ch_aux_send_set(a, c, true);
 
 function got_ch_link_int(ch, val)
 {
@@ -188,6 +206,50 @@ function got_ch_mute(ch, val) {
 		e.classList.remove("mute-on");
 		e.classList.add("mute-off");
 	}
+}
+
+function update_ch_send(ch, val)
+{
+	console.log("update_ch_send ch=" + ch + " val=" + val);
+	var button = document.getElementById("send_" + ch);
+	var fader = document.getElementById("fader_" + ch);
+	if (button && val) {
+		button.classList.remove("send-off");
+		button.classList.add("send-on");
+		button.textContent = "On";
+		fader.classList.remove("fader-off");
+		fader.classList.add("fader-on");
+	} else if (button) {
+		button.classList.remove("send-on");
+		button.classList.add("send-off");
+		button.textContent = "Off";
+		fader.classList.remove("fader-on");
+		fader.classList.add("fader-off");
+	}
+}
+
+function sw_ch_send(ch)
+{
+	console.log("sw_ch_send " + ch + " sel_bus=" + sel_bus);
+	if (sel_bus < -1 || 12 <= sel_bus)
+		return;
+	var v = cache_ch_aux_send_get(sel_bus, ch);
+	v = cache_ch_aux_send_set(sel_bus, ch, !v);
+	var addr_base = 0x0400001C;
+	if (0 <= sel_bus && sel_bus < 12)
+		var addr_base = 0x04001200 + sel_bus * 8;
+	senddt1(addr_base + ch * 0x10000, [v ? 0x01 : 0x00]);
+	update_ch_send(ch, v);
+}
+
+function got_ch_send(chaux, ch, val)
+{
+	console.log("got_ch_send " + ch + " " + val);
+	if (sel_bus < -1 || 12 <= sel_bus)
+		return;
+	val = cache_ch_aux_send_set(chaux, ch, val);
+	if (chaux == sel_bus)
+		update_ch_send(ch, val);
 }
 
 function midi2fader(v0, v1) {
@@ -294,8 +356,10 @@ document.addEventListener("DOMContentLoaded", function() {
 					case 0x04000010: got_ch_link(ch, data0); break;
 					case 0x04000014: got_ch_mute(ch, data0); break;
 					case 0x04000016: got_ch_fader(-1, ch, data0, data1); break;
+					case 0x0400001C: got_ch_send(-1, ch, data0); break;
 				}
 				switch(addr & 0xFF00FF07) {
+					case 0x04001200: got_ch_send(chaux, ch, data0); break;
 					case 0x04001202: got_ch_fader(chaux, ch, data0, data1); break;
 				}
 			}
@@ -330,7 +394,23 @@ document.addEventListener("DOMContentLoaded", function() {
 	}
 	tbody.appendChild(tr);
 
-	// TODO: send button
+	// send button
+	var tr = document.createElement("tr");
+	for (var ch = 0; ch < 32; ch++) {
+		var td = document.createElement("td");
+		td.className = "send-holder td-ch_" + ch;
+		var button = document.createElement("button");
+		button.className = "send-on";
+		button.id = "send_" + ch;
+		button.textContent = "On";
+		if (ro_channels[ch])
+			button.setAttribute("disabled", true);
+		td.appendChild(button);
+		tr.appendChild(td);
+		var func = (function(ch) { return function() { sw_ch_send(ch); } })(ch);
+		button.addEventListener("click", func);
+	}
+	tbody.appendChild(tr);
 
 	// fader
 	var tr = document.createElement("tr");
@@ -338,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		var td = document.createElement("td");
 		td.className = "fader-holder td-ch_" + ch;
 		var fader = document.createElement("input");
-		fader.className = "fader";
+		fader.className = "fader fader-on";
 		fader.id = "fader_" + ch;
 		fader.type = "range";
 		fader.min = 0;
