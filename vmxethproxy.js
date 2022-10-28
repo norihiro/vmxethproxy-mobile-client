@@ -83,6 +83,11 @@ function request_channels()
 	for (var ch = 0; ch < 32; ch++) {
 		rq_queue_push(["RQ1 " + (0x04000014 + ch * 0x10000).toString(16) + " 1", (x) => { return true; }, 0]);
 	}
+
+	for (var aux = 0; aux < 4; aux++) {
+		rq_queue_push(["RQ1 " + (0x06000000 + aux * 0x10000).toString(16) + " 6", (x) => { return true; }, 0]);
+	}
+
 	rq_queue_send();
 }
 
@@ -316,7 +321,8 @@ function got_ch_name(ch, name) {
 	}
 }
 
-function got_ch_color(ch, color) {
+function got_ch_color(ch, color)
+{
 	console.log("got_ch_color " + ch + " " + color);
 	e = document.getElementById("name_" + ch);
 	if (e) {
@@ -325,6 +331,15 @@ function got_ch_color(ch, color) {
 				e.classList.remove("color-" + i);
 		}
 		e.classList.add("color-" + color);
+	}
+}
+
+function got_aux_name(aux, name)
+{
+	console.log("got_aux_name " + aux + " '" + name + "'");
+	e = document.getElementById("bus_select_" + aux);
+	if (e) {
+		e.innerHTML = "Aux " + (aux + 1) + " - " + name.trim();
 	}
 }
 
@@ -357,6 +372,7 @@ document.addEventListener("DOMContentLoaded", function() {
 					case 0x04000014: got_ch_mute(ch, data0); break;
 					case 0x04000016: got_ch_fader(-1, ch, data0, data1); break;
 					case 0x0400001C: got_ch_send(-1, ch, data0); break;
+					case 0x06000000: got_aux_name(ch, String.fromCharCode(data0, data1, parseInt(words[4], 16), parseInt(words[5], 16), parseInt(words[6], 16), parseInt(words[7], 16))); break;
 				}
 				switch(addr & 0xFF00FF07) {
 					case 0x04001200: got_ch_send(chaux, ch, data0); break;
