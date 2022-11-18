@@ -43,6 +43,7 @@ var ws = null;
 var ws_connected = false;
 var sel_bus = -2;
 var rq_queue = [];
+var mem = [];
 
 function rq_queue_push(cmd)
 {
@@ -129,8 +130,10 @@ function on_bus_change(val)
 function senddt1(addr, data)
 {
 	msg = "DT1 " + addr.toString(16);
-	for (var i = 0; i < data.length; i++)
+	for (var i = 0; i < data.length; i++) {
 		msg = msg + " " + data[i].toString(16);
+		mem[addr + i] = data[i];
+	}
 	console.log("sending " + msg);
 	ws.send(msg);
 }
@@ -313,7 +316,9 @@ function got_ch_fader(bus, ch, v0, v1) {
 	on_ch_fader_set_label(ch, v0, v1);
 }
 
-function got_ch_name(ch, name) {
+function got_ch_name(ch) {
+	var a = 0x04000000 + (ch << 16);
+	var name = String.fromCharCode(mem[a], mem[a+1], mem[a+2], mem[a+3], mem[a+4], mem[a+5]);
 	console.log("got_ch_name " + ch + " '" + name + "'");
 	e = document.getElementById("name_" + ch);
 	if (e) {
@@ -334,8 +339,10 @@ function got_ch_color(ch, color)
 	}
 }
 
-function got_aux_name(aux, name)
+function got_aux_name(aux)
 {
+	var a = 0x06000000 + (aux << 16);
+	var name = String.fromCharCode(mem[a], mem[a+1], mem[a+2], mem[a+3], mem[a+4], mem[a+5]);
 	console.log("got_aux_name " + aux + " '" + name + "'");
 	e = document.getElementById("bus_select_" + aux);
 	if (e) {
@@ -363,20 +370,35 @@ document.addEventListener("DOMContentLoaded", function() {
 				var data0 = parseInt(words[2], 16);
 				var data1 = words.length > 3 ? parseInt(words[3], 16) : 0;
 				console.log("got_packet DT1 addr=0x" + addr.toString(16));
-				var ch = (addr >> 16) & 0x7F;
-				var chaux = (addr >> 3) & 0x0F;
-				switch (addr & 0xFFE0FFFF) {
-					case 0x04000000: got_ch_name(ch, String.fromCharCode(data0, data1, parseInt(words[4], 16), parseInt(words[5], 16), parseInt(words[6], 16), parseInt(words[7], 16))); break;
-					case 0x0400000E: got_ch_color(ch, data0); break;
-					case 0x04000010: got_ch_link(ch, data0); break;
-					case 0x04000014: got_ch_mute(ch, data0); break;
-					case 0x04000016: got_ch_fader(-1, ch, data0, data1); break;
-					case 0x0400001C: got_ch_send(-1, ch, data0); break;
-					case 0x06000000: got_aux_name(ch, String.fromCharCode(data0, data1, parseInt(words[4], 16), parseInt(words[5], 16), parseInt(words[6], 16), parseInt(words[7], 16))); break;
-				}
-				switch(addr & 0xFF00FF07) {
-					case 0x04001200: got_ch_send(chaux, ch, data0); break;
-					case 0x04001202: got_ch_fader(chaux, ch, data0, data1); break;
+				for (var i = 0; i + 2 < words.length; i++) {
+					var a = addr + i;
+					mem[a] = parseInt(words[i + 2], 16);
+
+					var ch = (a >> 16) & 0x7F;
+					var chaux = (a >> 3) & 0x0F;
+					switch (a & 0xFFE0FFFF) {
+						case 0x04000000: got_ch_name(ch); break;
+						case 0x04000001: got_ch_name(ch); break;
+						case 0x04000002: got_ch_name(ch); break;
+						case 0x04000003: got_ch_name(ch); break;
+						case 0x04000004: got_ch_name(ch); break;
+						case 0x04000005: got_ch_name(ch); break;
+						case 0x0400000E: got_ch_color(ch, mem[a]); break;
+						case 0x04000010: got_ch_link(ch, mem[a]); break;
+						case 0x04000014: got_ch_mute(ch, mem[a]); break;
+						case 0x04000017: got_ch_fader(-1, ch, mem[a-1], mem[a]); break;
+						case 0x0400001C: got_ch_send(-1, ch, mem[a]); break;
+						case 0x06000000:
+						case 0x06000001:
+						case 0x06000002:
+						case 0x06000003:
+						case 0x06000004:
+						case 0x06000005: got_aux_name(ch); break;
+					}
+					switch(a & 0xFF00FF07) {
+						case 0x04001200: got_ch_send(chaux, ch, mem[a]); break;
+						case 0x04001203: got_ch_fader(chaux, ch, mem[a-1], mem[a]); break;
+					}
 				}
 			}
 			rq_queue_send();
