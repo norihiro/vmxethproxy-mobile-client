@@ -106,12 +106,10 @@ function request_current_bus()
 		for (var ch = 0; ch < 32; ch++)
 			rq_queue_push(["RQ1 " + (0x04000016 + ch * 0x10000).toString(16) + " 2", test_bus, sel_bus]);
 	}
-	else if (0 <= sel_bus && sel_bus < 8) {
-		var addr_base = 0x04001200 + sel_bus * 8;
+	else if (0 <= sel_bus && sel_bus < 12) {
+		var addr_base = sel_bus < 8 ? 0x04001200 + sel_bus * 8 : 0x04001300 + (sel_bus & 3) * 8;
 		for (var ch = 0; ch < 32; ch++)
-			rq_queue_push(["RQ1 " + (addr_base + ch * 0x10000 + 0x02).toString(16) + " 2", test_bus, sel_bus]); // Aux level
-		for (var ch = 0; ch < 32; ch++)
-			rq_queue_push(["RQ1 " + (addr_base + ch * 0x10000 + 0x00).toString(16) + " 1", test_bus, sel_bus]); // Aux send switch
+			rq_queue_push(["RQ1 " + (addr_base + ch * 0x10000).toString(16) + " 4", test_bus, sel_bus]);
 	}
 	rq_queue_send();
 }
@@ -244,8 +242,10 @@ function sw_ch_send(ch)
 	var v = cache_ch_aux_send_get(sel_bus, ch);
 	v = cache_ch_aux_send_set(sel_bus, ch, !v);
 	var addr_base = 0x0400001C;
-	if (0 <= sel_bus && sel_bus < 12)
+	if (0 <= sel_bus && sel_bus < 8)
 		addr_base = 0x04001200 + sel_bus * 8;
+	else if (8 <= sel_bus && sel_bus < 12)
+		addr_base = 0x04001300 + (sel_bus & 3) * 8;
 	senddt1(addr_base + ch * 0x10000, [v ? 0x01 : 0x00]);
 	update_ch_send(ch, v);
 }
@@ -301,6 +301,8 @@ function on_ch_fader(ch, val) {
 	var addr_base = 0x04000016;
 	if (0 <= sel_bus && sel_bus < 8)
 		addr_base = 0x04001202 + sel_bus * 8;
+	else if (8 <= sel_bus && sel_bus < 12)
+		addr_base = 0x04001302 + (sel_bus & 3) * 8;
 	senddt1(addr_base + ch * 0x10000, vv);
 	on_ch_fader_set_label(ch, vv[0], vv[1]);
 }
@@ -375,7 +377,6 @@ document.addEventListener("DOMContentLoaded", function() {
 					mem[a] = parseInt(words[i + 2], 16);
 
 					var ch = (a >> 16) & 0x7F;
-					var chaux = (a >> 3) & 0x0F;
 					switch (a & 0xFFE0FFFF) {
 						case 0x04000000:
 						case 0x04000001:
@@ -395,9 +396,13 @@ document.addEventListener("DOMContentLoaded", function() {
 						case 0x06000004:
 						case 0x06000005: got_aux_name(ch); break;
 					}
+
+					var chaux = (a >> 3) & 0x0F;
 					switch(a & 0xFF00FF07) {
 						case 0x04001200: got_ch_send(chaux, ch, mem[a]); break;
 						case 0x04001203: got_ch_fader(chaux, ch, mem[a-1], mem[a]); break;
+						case 0x04001300: got_ch_send(chaux + 8, ch, mem[a]); break;
+						case 0x04001303: got_ch_fader(chaux + 8, ch, mem[a-1], mem[a]); break;
 					}
 				}
 			}
