@@ -245,7 +245,7 @@ function sw_ch_send(ch)
 	v = cache_ch_aux_send_set(sel_bus, ch, !v);
 	var addr_base = 0x0400001C;
 	if (0 <= sel_bus && sel_bus < 12)
-		var addr_base = 0x04001200 + sel_bus * 8;
+		addr_base = 0x04001200 + sel_bus * 8;
 	senddt1(addr_base + ch * 0x10000, [v ? 0x01 : 0x00]);
 	update_ch_send(ch, v);
 }
@@ -377,11 +377,11 @@ document.addEventListener("DOMContentLoaded", function() {
 					var ch = (a >> 16) & 0x7F;
 					var chaux = (a >> 3) & 0x0F;
 					switch (a & 0xFFE0FFFF) {
-						case 0x04000000: got_ch_name(ch); break;
-						case 0x04000001: got_ch_name(ch); break;
-						case 0x04000002: got_ch_name(ch); break;
-						case 0x04000003: got_ch_name(ch); break;
-						case 0x04000004: got_ch_name(ch); break;
+						case 0x04000000:
+						case 0x04000001:
+						case 0x04000002:
+						case 0x04000003:
+						case 0x04000004:
 						case 0x04000005: got_ch_name(ch); break;
 						case 0x0400000E: got_ch_color(ch, mem[a]); break;
 						case 0x04000010: got_ch_link(ch, mem[a]); break;
