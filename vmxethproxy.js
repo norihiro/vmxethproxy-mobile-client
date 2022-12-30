@@ -41,6 +41,7 @@ function new_ws(urlpath, protocol)
 
 var ws = null;
 var ws_connected = false;
+var ws_connecting = false;
 var sel_bus = -2;
 var rq_queue = [];
 var mem = [];
@@ -52,8 +53,13 @@ function rq_queue_push(cmd)
 
 function rq_queue_send()
 {
-	if (!ws_connected)
+	if (!ws_connected) {
+		if (!ws_connecting)
+			attempt_ws();
+
 		return;
+	}
+
 	while (rq_queue.length > 0) {
 		var e = rq_queue.shift();
 		var cmd = e[0];
@@ -352,16 +358,20 @@ function got_aux_name(aux)
 	}
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+function attempt_ws()
+{
+	ws_connecting = true;
 
 	ws = new_ws(get_appropriate_ws_url(""), "ws");
 	try {
 		ws.onopen = function() {
 			ws_connected = true;
+			ws_connecting = false;
 			request_channels();
 			request_current_bus();
 			request_channels1();
 			setInterval(rq_queue_send, 1000);
+			document.getElementById("message").textContent = '';
 		};
 
 		ws.onmessage = function got_packet(msg) {
@@ -411,12 +421,17 @@ document.addEventListener("DOMContentLoaded", function() {
 	
 		ws.onclose = function(){
 			ws_connected = false;
-			document.getElementById("message").textContent = 'Disconnected. Please reload';
+			ws_connecting = false;
+			document.getElementById("message").textContent = 'Disconnected.';
 		};
 	} catch(exception) {
 		alert("<p>Error " + exception);  
 	}
-	
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+	attempt_ws();
+
 	var tbody = document.getElementById("channel-holder");
 
 	// mute button
