@@ -45,6 +45,7 @@ var ws_connecting = false;
 var sel_bus = -2;
 var rq_queue = [];
 var mem = [];
+var hide_disabled_channel = true;
 
 function rq_queue_push(cmd)
 {
@@ -164,20 +165,32 @@ function got_ch_link_int(ch, val)
 {
 	is_linked[ch] = val;
 
+	update_ch_display(ch);
+
+	var e = document.getElementById("namecode_" + ch);
+	e.textContent = (val && (ch & 1) == 0) ? "CH" + (ch+1) + "/" + (ch+2) : "CH" + (ch+1);
+}
+
+function update_ch_display(ch)
+{
+	hide_disabled_channel = document.querySelector("#hide_disabled_channel").checked; // TODO: ensure addEventListener works.
+	var aux_send_en = cache_ch_aux_send_get(sel_bus, ch);
 	var ee = document.getElementsByClassName("td-ch_" + ch);
-	console.log("got_ch_link_int ee.length=" + ee.length);
 	for (var i = 0; i < ee.length; i++) {
-		if (val) {
+		if (is_linked[ch]) {
 			ee[i].classList.remove("link-mono");
 			ee[i].classList.add((ch & 1) ? "link-odd" : "link-even");
 		} else {
 			ee[i].classList.remove((ch & 1) ? "link-odd" : "link-even");
 			ee[i].classList.add("link-mono");
 		}
-	}
 
-	var e = document.getElementById("namecode_" + ch);
-	e.textContent = (val && (ch & 1) == 0) ? "CH" + (ch+1) + "/" + (ch+2) : "CH" + (ch+1);
+		if (aux_send_en || !hide_disabled_channel) {
+			ee[i].classList.remove("ch-hidden");
+		} else {
+			ee[i].classList.add("ch-hidden");
+		}
+	}
 }
 
 function got_ch_link(ch, val)
@@ -238,6 +251,8 @@ function update_ch_send(ch, val)
 		button.textContent = "Off";
 		fader.classList.add("send-off");
 	}
+
+	update_ch_display(ch);
 }
 
 function sw_ch_send(ch)
@@ -355,6 +370,13 @@ function got_aux_name(aux)
 	e = document.getElementById("bus_select_" + aux);
 	if (e) {
 		e.innerHTML = "Aux " + (aux + 1) + " - " + name.trim();
+	}
+}
+
+function on_hide_disabled_channel_changed() {
+	hide_disabled_channel = document.querySelector("#hide_disabled_channel").checked;
+	for (var ch = 0; ch < 32; ch++) {
+		update_ch_display(ch);
 	}
 }
 
@@ -531,9 +553,10 @@ document.addEventListener("DOMContentLoaded", function() {
 	document.getElementById("bus").addEventListener("change", (e) => { on_bus_change(e.target.value); });
 	on_bus_change(document.getElementById("bus").value);
 
+	document.getElementById("hide_disabled_channel").addEventListener("change", (e) => { on_hide_disabled_channel_changed(); });
+
 }, false);
 
 addEventListener("load", function() {
 	window.scrollTo(0, 0);
 }, false);
-

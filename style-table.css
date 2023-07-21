@@ -54,6 +54,10 @@ div.header {
 	display: none;
 }
 
+.channels td.ch-hidden {
+	display: none;
+}
+
 button.mute-off {
 	width: 70px;
 }
