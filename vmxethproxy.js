@@ -110,8 +110,10 @@ function request_channels1()
 function request_current_bus()
 {
 	if (sel_bus < 0) {
-		for (var ch = 0; ch < 32; ch++)
+		for (var ch = 0; ch < 32; ch++) {
 			rq_queue_push(["RQ1 " + (0x04000016 + ch * 0x10000).toString(16) + " 2", test_bus, sel_bus]);
+			rq_queue_push(["RQ1 " + (0x0400001C + ch * 0x10000).toString(16) + " 1", test_bus, sel_bus]);
+		}
 	}
 	else if (0 <= sel_bus && sel_bus < 12) {
 		var addr_base = sel_bus < 8 ? 0x04001200 + sel_bus * 8 : 0x04001300 + (sel_bus & 3) * 8;
