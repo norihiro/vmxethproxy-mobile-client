@@ -193,6 +193,13 @@ function update_ch_display(ch)
 			ee[i].classList.add("ch-hidden");
 		}
 	}
+
+	var e = document.getElementById("send_" + ch);
+	if (hide_disabled_channel) {
+		e.classList.add("send-hidden");
+	} else {
+		e.classList.remove("send-hidden");
+	}
 }
 
 function got_ch_link(ch, val)
