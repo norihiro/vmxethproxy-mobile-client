@@ -291,14 +291,12 @@ function midi2fader(v0, v1) {
 		x = v0 * 128 + v1;
 
 	if (x < -905)
-		return 0;
-	var r = (x+1000)*(x+1000) / 1210;
-	console.log("midi2fader v0=" + v0 + " v1=" + v1 + " x=" + x + " r=" + r);
-	return r;
+		return 1000;
+	return 1000 - (x+1000)*(x+1000) / 1210;
 }
 
 function fader2midi(val) {
-	var x = Math.round(Math.sqrt(val * 1210.000) - 1000);
+	var x = Math.round(Math.sqrt((1000 - val) * 1210.000) - 1000);
 	x += 256*256;
 	return [(x / 128) & 0x7F, x & 0x7F];
 }
@@ -330,13 +328,17 @@ function on_ch_fader(ch, val) {
 	on_ch_fader_set_label(ch, vv[0], vv[1]);
 }
 
+var fader_updating = false;
+
 function got_ch_fader(bus, ch, v0, v1) {
 	console.log("got_ch_fader bus=" + bus + " ch=" + ch + " " + v0 + " " + v1);
 	if (bus != sel_bus)
 		return;
-	e = document.getElementById("fader_" + ch);
-	if (e) {
-		e.value = midi2fader(v0, v1);
+	var fader = document.getElementById("fader_" + ch);
+	if (fader) {
+		fader_updating = true;
+		fader.noUiSlider.set(midi2fader(v0, v1));
+		fader_updating = false;
 	}
 	on_ch_fader_set_label(ch, v0, v1);
 }
@@ -499,28 +501,37 @@ document.addEventListener("DOMContentLoaded", function() {
 	for (var ch = 0; ch < 32; ch++) {
 		var td = document.createElement("td");
 		td.className = "fader-holder td-ch_" + ch;
-		var fader = document.createElement("input");
+		var fader_holder = document.createElement("div");
+		fader_holder.className = 'fader_holder';
+		var fader = document.createElement("div");
 		fader.className = "fader";
 		fader.id = "fader_" + ch;
-		fader.type = "range";
-		fader.min = 0;
-		fader.max = 1000;
-		fader.value = 0;
+		noUiSlider.create(fader, {
+			start: 1000,
+			range: {'min': 0, 'max': 1000},
+			orientation: 'vertical',
+			animate: false
+		});
 		if (ro_channels[ch])
-			fader.setAttribute("disabled", true);
-		fader.setAttribute("orient", "vertical");
+			fader.noUiSlider.disable();
+		fader_holder.appendChild(fader);
 		var fadervalue = document.createElement("span");
 		fadervalue.id = "fadervalue_" + ch;
 		fadervalue.className = "fadervalue";
 		fadervalue.textContent = "x dB";
-		td.appendChild(fader);
+		td.appendChild(fader_holder);
 		td.appendChild(document.createElement("br"));
 		td.appendChild(fadervalue);
 		tr.appendChild(td);
 
-		var func = (function(ch) { return function(ev) { on_ch_fader(ch, ev.target.value); } })(ch);
-		fader.addEventListener("input", func);
-
+		var func = (function(ch) { return function() {
+			if (fader_updating)
+				return;
+			var fader = document.getElementById("fader_" + ch);
+			if (fader)
+				on_ch_fader(ch, fader.noUiSlider.get());
+		} })(ch);
+		fader.noUiSlider.on('update.one', func);
 	}
 	tbody.appendChild(tr);
 

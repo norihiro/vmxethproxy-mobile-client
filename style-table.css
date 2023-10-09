@@ -76,47 +76,41 @@ button.send-on {
 	width: 70px;
 }
 
-.fader {
-	writing-mode: bt-lr;
-	-webkit-appearance: slider-vertical;
-	border: 2px;
-	width: 25px;
+.fader_holder {
+	margin: 30px 0 0 0;
+	border: 0;
+	padding: 0;
+}
+.fader_holder .fader {
+	border: 0;
 	height: 200px;
-	outline: none;
-	transition: opacity .2s;
+	margin: 0 auto;
 	background-color: #000;
+	box-shadow: inset 0 2px 2px #151819;
 }
-.fader::-moz-range-thumb {
+.fader_holder .fader .noUi-handle {
 	width: 50px;
-	height: 50px; 
+	height: 50px;
 	background: transparent;
 	border: 5px solid #299ecc;
+	box-shadow: none;
+	right: -17px;
+	bottom: -24px;
 }
-.fader.send-off::-moz-range-thumb {
+.fader_holder .fader.send-off .noUi-handle {
 	border: 5px solid #505050;
 }
-.fader.mute-on::-moz-range-thumb {
+.fader_holder .fader.mute-on .noUi-handle {
 	border: 5px solid #ff0000;
 }
-.fader.mute-on.send-off::-moz-range-thumb {
+.fader_holder .fader.mute-on.send-off .noUi-handle {
 	border: 5px solid #a72828;
 }
-.fader::-webkit-slider-thumb {
-	-webkit-appearance: none;
-	width: 50px;
-	height: 50px; 
-	background: transparent;
-	border: 5px solid #299ecc;
+.fader_holder .noUi-handle:before,
+.fader_holder .noUi-handle:after {
+	display: none;
 }
-.fader.send-off::-webkit-slider-thumb {
-	border: 5px solid #505050;
-}
-.fader.mute-on::-webkit-slider-thumb {
-	border: 5px solid #ff0000;
-}
-.fader.mute-on.send-off::-webkit-slider-thumb {
-	border: 5px solid #a72828;
-}
+
 .fadervalue {
 	white-space: nowrap;
 	overflow-x: hidden;
